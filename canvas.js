@@ -10,6 +10,7 @@ const ctx = canvas.getContext('2d');
 ctx.canvas.width = fw;
 ctx.canvas.height = fh;
 
+let hasScroll = false;
 let data = {};
 let raf;
 let obj;
@@ -24,9 +25,8 @@ let ball = {
     max: 40,
     direction: true,
     color: getRandomColor(),
-    raf: null,
     draw: function () {
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = getRandomColor();
         ctx.fillRect(this.x, this.y, this.w, this.h);
     },
     clear: function () {
@@ -62,55 +62,67 @@ function flip() {
 }
 
 function init() {
-    for (let i = 0; i <= 10; i++) {
-        ball.xmax = i * ball.max;
-        ball.x = i * ball.max;
+    const xmax = Math.round(fw / ball.max);
+    const ymax = Math.round(fh / ball.max);
 
-        data[i] = Object.assign({}, ball);
-        data[i].draw();
+    console.log(xmax, ymax);
+
+    for (let y = 0; y <= ymax; y++) {
+        if (!data[y]) {
+            data[y] = [];
+        }
+
+        for (let x = 0; x <= xmax; x++) {
+            ball.xmax = x * ball.max;
+            ball.x = x * ball.max;
+            ball.ymax = y * ball.max;
+            ball.y = y * ball.max;
+
+            data[y][x] = Object.assign({}, ball);
+        }
     }
     console.log(data);
 }
 
 init();
 
-canvas.addEventListener('mouseout', function (e) {
-    obj.clear();
-    obj.reset();
-    obj = null;
-    window.cancelAnimationFrame(raf);
-});
+canvas.addEventListener('mouseout', (e) => {
+    console.log(e);
+    hasScroll = false;
 
-let hasScroll = false;
-let event = false;
-canvas.addEventListener('mousemove', function (e) {
-    hasScroll = true;
-    event = e;
+    if (obj) {
+        obj.clear();
+        obj.reset();
+        window.cancelAnimationFrame(raf);
+        obj = null;
+    }
 });
+canvas.addEventListener('mousemove', (e) => hasScroll = e);
 
 setInterval(function () {
     if (hasScroll) {
-        animate(event);
+        animate(hasScroll);
         hasScroll = false;
     }
-}, 100);
-
+}, 80);
 
 function animate(e) {
-    const x = Math.round(e.x / ball.max);
-    console.log(x);
+    const x = Math.floor(e.x / ball.max);
+    const y = Math.floor(e.y / ball.max);
+    console.log(e.x, x, e.y, y);
 
-    if (obj !== data[x]) {
-        console.log(e);
+    if (data[y] && data[y][x]) {
+        if (obj !== data[y][x]) {
+            //console.log(e);
 
-        if (obj) {
-            obj.clear();
-            obj.reset();
-            obj = null;
-        }
+            if (obj) {
+                obj.clear();
+                obj.reset();
+                window.cancelAnimationFrame(raf);
+                obj = null;
+            }
 
-        if (data[x]) {
-            obj = data[x];
+            obj = data[y][x];
             raf = window.requestAnimationFrame(flip);
         }
     }
