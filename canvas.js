@@ -5,6 +5,10 @@ class Flip {
         ctx.canvas.width = window.innerWidth;
         ctx.canvas.height = window.innerHeight;
 
+        const img = new Image();
+        img.src = 'kappa.png';
+        img.onload = () => ctx.drawImage(img, 100, 100, 50, 50);
+
         this.options = {
             dimension: 50,
             multiColor: false,
