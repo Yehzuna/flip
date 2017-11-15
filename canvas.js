@@ -46,6 +46,7 @@ class Flip {
 
         this.generate();
 
+        canvas.addEventListener('click', (e) => this.hasMove = e);
         canvas.addEventListener('mousemove', (e) => this.hasMove = e);
         canvas.addEventListener('mouseout', () => {
             this.hasMove = false;
