@@ -1,213 +1,185 @@
-function getRandomColor() {
-    let o = Math.round, r = Math.random, s = 255;
-    return 'rgb(' + o(r() * s) + ',' + o(r() * s) + ',' + o(r() * s) + ')';
-}
+class Flip {
+    constructor() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.canvas.width = window.innerWidth;
+        ctx.canvas.height = window.innerHeight;
 
-const fw = window.innerWidth;
-const fh = window.innerHeight;
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-ctx.canvas.width = fw;
-ctx.canvas.height = fh;
+        this.options = {
+            dimension: 50,
+            multiColor: false,
+            multiAnimate: false
+        };
 
-let hasScroll = false;
-let data = {};
-let raf;
-let obj;
+        this.placeholder = {
+            x: 0,
+            y: 0,
+            xmax: 0,
+            ymax: 0,
+            h: 0,
+            w: 0,
+            max: this.options.dimension,
+            direction: true,
+            animate: false,
+            draw: function (color = Flip.getRandomColor()) {
+                ctx.fillStyle = color;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            },
+            clear: function () {
+                ctx.clearRect(this.xmax, this.ymax, this.max, this.max);
+            },
+            reset: function () {
+                ctx.fillRect(this.xmax, this.ymax, this.max, this.max);
+            },
+        };
 
-let ball = {
-    x: 0,
-    y: 0,
-    xmax: 0,
-    ymax: 0,
-    h: 40,
-    w: 40,
-    max: 40,
-    direction: true,
-    color: getRandomColor(),
-    draw: function () {
-        ctx.fillStyle = getRandomColor();
-        ctx.fillRect(this.x, this.y, this.w, this.h);
-    },
-    clear: function () {
-        ctx.clearRect(this.xmax, this.ymax, this.max, this.max);
-    },
-    reset: function () {
-        ctx.fillRect(this.xmax, this.ymax, this.max, this.max);
-    },
-};
+        this.scene = [];
+        this.item = null;
+        this.raf = null;
+        this.color = Flip.getRandomColor();
+        this.hasMove = false;
 
-function flip() {
-    obj.clear();
-    obj.draw();
+        this.generate();
 
-    if (obj.direction) {
-        obj.x += 3;
-        obj.w -= 6;
-    } else {
-        obj.x -= 3;
-        obj.w += 6;
+        canvas.addEventListener('mousemove', (e) => this.hasMove = e);
+        canvas.addEventListener('mouseout', () => {
+            this.hasMove = false;
+            this.resetItem();
+        });
+
+        setInterval(() => {
+            if (this.hasMove) {
+                this.animate(this.hasMove);
+
+                if (this.isAnimate()) {
+                    this.reset();
+                }
+
+                this.hasMove = false;
+            }
+        }, 80);
+
+        let timer;
+        window.addEventListener('resize', () => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => this.reset(), 500);
+        });
     }
 
-    if (obj.w <= 0) {
-        obj.color = getRandomColor();
-        obj.direction = false;
-    }
+    generate() {
+        const xmax = Math.ceil(window.innerWidth / this.placeholder.max);
+        const ymax = Math.ceil(window.innerHeight / this.placeholder.max);
 
-    if (obj.w >= obj.max) {
-        obj.direction = true;
-    }
-
-    raf = window.requestAnimationFrame(flip);
-}
-
-function init() {
-    const xmax = Math.round(fw / ball.max);
-    const ymax = Math.round(fh / ball.max);
-
-    console.log(xmax, ymax);
-
-    for (let y = 0; y <= ymax; y++) {
-        if (!data[y]) {
-            data[y] = [];
-        }
-
-        for (let x = 0; x <= xmax; x++) {
-            ball.xmax = x * ball.max;
-            ball.x = x * ball.max;
-            ball.ymax = y * ball.max;
-            ball.y = y * ball.max;
-
-            data[y][x] = Object.assign({}, ball);
-        }
-    }
-    console.log(data);
-}
-
-init();
-
-canvas.addEventListener('mouseout', (e) => {
-    console.log(e);
-    hasScroll = false;
-
-    if (obj) {
-        obj.clear();
-        obj.reset();
-        window.cancelAnimationFrame(raf);
-        obj = null;
-    }
-});
-canvas.addEventListener('mousemove', (e) => hasScroll = e);
-
-setInterval(function () {
-    if (hasScroll) {
-        animate(hasScroll);
-        hasScroll = false;
-    }
-}, 80);
-
-function animate(e) {
-    const x = Math.floor(e.x / ball.max);
-    const y = Math.floor(e.y / ball.max);
-    console.log(e.x, x, e.y, y);
-
-    if (data[y] && data[y][x]) {
-        if (obj !== data[y][x]) {
-            //console.log(e);
-
-            if (obj) {
-                obj.clear();
-                obj.reset();
-                window.cancelAnimationFrame(raf);
-                obj = null;
+        for (let y = 0; y < ymax; y++) {
+            if (!this.scene[y]) {
+                this.scene[y] = [];
             }
 
-            obj = data[y][x];
-            raf = window.requestAnimationFrame(flip);
+            for (let x = 0; x < xmax; x++) {
+                this.placeholder.xmax = x * this.placeholder.max;
+                this.placeholder.x = x * this.placeholder.max;
+                this.placeholder.ymax = y * this.placeholder.max;
+                this.placeholder.y = y * this.placeholder.max;
+                this.placeholder.h = this.placeholder.max;
+                this.placeholder.w = this.placeholder.max;
+
+                this.scene[y][x] = Object.assign({}, this.placeholder);
+            }
         }
+        console.log(this.scene);
+    }
+
+    reset() {
+        const ctx = document.getElementById('canvas').getContext('2d');
+        ctx.canvas.width = window.innerWidth;
+        ctx.canvas.height = window.innerHeight;
+
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+        this.resetItem();
+
+        this.color = Flip.getRandomColor();
+        this.scene = [];
+
+        this.generate();
+    }
+
+    resetItem() {
+        if (this.item) {
+            this.item.clear();
+            this.item.reset();
+            window.cancelAnimationFrame(this.raf);
+            this.item = null;
+        }
+    }
+
+    isAnimate() {
+        return this.scene.reduce((a, b) => a.concat(b), []).every((el) => el.animate);
+    }
+
+    animate(e) {
+        const x = Math.floor(e.x / this.placeholder.max);
+        const y = Math.floor(e.y / this.placeholder.max);
+        //console.log(e.x, x, e.y, y);
+
+        if (this.scene[y] && this.scene[y][x]) {
+
+            if (this.item !== this.scene[y][x]) {
+
+                this.resetItem();
+                this.item = this.scene[y][x];
+
+                // cut the animation if already done
+                if (this.item.animate) {
+                    return false;
+                }
+
+                this.raf = window.requestAnimationFrame(() => this.flip());
+            }
+        }
+    }
+
+    flip() {
+        this.item.animate = true;
+
+        this.item.clear();
+
+        // random color if needed
+        let color = this.color;
+        if (this.options.multiColor) {
+            color = Flip.getRandomColor();
+        }
+        this.item.draw(color);
+
+        if (this.item.direction) {
+            this.item.x += 3;
+            this.item.w -= 6;
+        } else {
+            this.item.x -= 3;
+            this.item.w += 6;
+        }
+
+        if (this.item.w <= 0) {
+            this.item.direction = false;
+        }
+
+        if (this.item.w >= this.item.max) {
+            this.item.direction = true;
+
+            // set only one animation
+            if (!this.options.multiAnimate) {
+                this.resetItem();
+                return false
+            }
+        }
+
+        this.raf = window.requestAnimationFrame(() => this.flip());
+    }
+
+    static getRandomColor() {
+        let o = Math.round, r = Math.random, s = 255;
+        return 'rgb(' + o(r() * s) + ',' + o(r() * s) + ',' + o(r() * s) + ')';
     }
 }
 
-
-//ball.draw();
-
-/*
- function draw() {
- const dim = 80;
- const fh = window.innerHeight;
- const fw = window.innerWidth;
-
- const h = Math.floor(fh / dim);
- const w = Math.floor(fw / dim);
-
- console.log(fh, fw, color);
-
- ctx.fillStyle = getRandomColor();
- ctx.rotate(90 * Math.PI / 180);
- ctx.fillRect(0, 0, 800, 600);
-
- //ctx.fillStyle = getRandomColor();
- //ctx.rotate(-90);
- }
-
- draw();
- */
-
-/*
- function getRandomColor() {
- let o = Math.round, r = Math.random, s = 255;
- return 'rgb(' + o(r()*s) + ',' + o(r()*s) + ',' + o(r()*s) + ')';
- }
-
- const canvas = document.getElementById('canvas');
- const ctx = canvas.getContext('2d');
- const color = getRandomColor();
- let raf;
-
- let ball = {
- x: 100,
- y: 100,
- h: 48,
- w: 48,
- max: 48,
- direction: true,
- color: getRandomColor(),
- draw: function() {
- ctx.fillStyle = this.color;
- ctx.fillRect(this.x, this.y, this.w, this.h);
- }
- };
-
- function draw() {
- ctx.clearRect(0,0, canvas.width, canvas.height);
- ball.draw();
-
- if (ball.direction) {
- ball.x += 3;
- ball.w -= 6;
- } else {
- ball.x -= 3;
- ball.w += 6;
- }
-
- if (ball.w <= 0) {
- ball.color = getRandomColor();
- ball.direction = false;
- }
-
- if (ball.w >= ball.max) {
- ball.direction = true;
- }
- raf = window.requestAnimationFrame(draw);
- }
-
- canvas.addEventListener('mouseover', function(e) {
- raf = window.requestAnimationFrame(draw);
- });
-
- canvas.addEventListener('mouseout', function(e) {
- window.cancelAnimationFrame(raf);
- });
-
- ball.draw();
- */
+const flip = new Flip();
