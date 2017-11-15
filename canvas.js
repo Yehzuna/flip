@@ -5,10 +5,6 @@ class Flip {
         ctx.canvas.width = window.innerWidth;
         ctx.canvas.height = window.innerHeight;
 
-        const img = new Image();
-        img.src = 'kappa.png';
-        img.onload = () => ctx.drawImage(img, 100, 100, 50, 50);
-
         this.options = {
             dimension: 50,
             multiColor: false,
@@ -22,18 +18,23 @@ class Flip {
             ymax: 0,
             h: 0,
             w: 0,
-            max: this.options.dimension,
+            dimension: this.options.dimension,
             direction: true,
             animate: false,
             draw: function (color = Flip.getRandomColor()) {
                 ctx.fillStyle = color;
                 ctx.fillRect(this.x, this.y, this.w, this.h);
             },
+            kappa: function () {
+                const img = new Image();
+                img.src = 'kappa.png';
+                img.onload = () => ctx.drawImage(img, this.xmax, this.ymax, this.dimension, this.dimension);
+            },
             clear: function () {
-                ctx.clearRect(this.xmax, this.ymax, this.max, this.max);
+                ctx.clearRect(this.xmax, this.ymax, this.dimension, this.dimension);
             },
             reset: function () {
-                ctx.fillRect(this.xmax, this.ymax, this.max, this.max);
+                ctx.fillRect(this.xmax, this.ymax, this.dimension, this.dimension);
             },
         };
 
@@ -71,8 +72,8 @@ class Flip {
     }
 
     generate() {
-        const xmax = Math.ceil(window.innerWidth / this.placeholder.max);
-        const ymax = Math.ceil(window.innerHeight / this.placeholder.max);
+        const xmax = Math.ceil(window.innerWidth / this.options.dimension);
+        const ymax = Math.ceil(window.innerHeight / this.options.dimension);
 
         for (let y = 0; y < ymax; y++) {
             if (!this.scene[y]) {
@@ -80,12 +81,12 @@ class Flip {
             }
 
             for (let x = 0; x < xmax; x++) {
-                this.placeholder.xmax = x * this.placeholder.max;
-                this.placeholder.x = x * this.placeholder.max;
-                this.placeholder.ymax = y * this.placeholder.max;
-                this.placeholder.y = y * this.placeholder.max;
-                this.placeholder.h = this.placeholder.max;
-                this.placeholder.w = this.placeholder.max;
+                this.placeholder.xmax = x * this.options.dimension;
+                this.placeholder.x = x * this.options.dimension;
+                this.placeholder.ymax = y * this.options.dimension;
+                this.placeholder.y = y * this.options.dimension;
+                this.placeholder.h = this.options.dimension;
+                this.placeholder.w = this.options.dimension;
 
                 this.scene[y][x] = Object.assign({}, this.placeholder);
             }
@@ -112,6 +113,8 @@ class Flip {
         if (this.item) {
             this.item.clear();
             this.item.reset();
+            this.item.kappa();
+
             window.cancelAnimationFrame(this.raf);
             this.item = null;
         }
@@ -122,8 +125,8 @@ class Flip {
     }
 
     animate(e) {
-        const x = Math.floor(e.x / this.placeholder.max);
-        const y = Math.floor(e.y / this.placeholder.max);
+        const x = Math.floor(e.x / this.options.dimension);
+        const y = Math.floor(e.y / this.options.dimension);
         //console.log(e.x, x, e.y, y);
 
         if (this.scene[y] && this.scene[y][x]) {
@@ -167,7 +170,7 @@ class Flip {
             this.item.direction = false;
         }
 
-        if (this.item.w >= this.item.max) {
+        if (this.item.w >= this.item.dimension) {
             this.item.direction = true;
 
             // set only one animation
