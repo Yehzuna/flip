@@ -7,6 +7,7 @@ class Flip {
 
         this.options = {
             dimension: 50,
+            kappa: 0.0001,
             multiColor: false,
             multiAnimate: false
         };
@@ -92,7 +93,7 @@ class Flip {
                 this.scene[y][x] = Object.assign({}, this.placeholder);
             }
         }
-        console.log(this.scene);
+        // console.log(this.scene);
     }
 
     reset() {
@@ -114,7 +115,10 @@ class Flip {
         if (this.item) {
             this.item.clear();
             this.item.reset();
-            this.item.kappa();
+
+            if (Math.random() < this.options.kappa) {
+                this.item.kappa();
+            }
 
             window.cancelAnimationFrame(this.raf);
             this.item = null;
@@ -185,9 +189,12 @@ class Flip {
     }
 
     static getRandomColor() {
-        let o = Math.round, r = Math.random, s = 255;
-        return 'rgb(' + o(r() * s) + ',' + o(r() * s) + ',' + o(r() * s) + ')';
+        const o = Math.round;
+        const r = Math.random;
+        const s = 255;
+
+        return `rgb(${o(r() * s)}, ${o(r() * s)}, ${o(r() * s)})`;
     }
 }
 
-const flip = new Flip();
+new Flip();
